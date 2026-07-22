@@ -72,3 +72,27 @@ python backend/skill_matcher.py
 les libellés + alias, et expose `extract_matches(text, lang)` : recherche exacte (insensible à la
 casse, respect des frontières de mot), retourne les compétences/métiers trouvés dans le texte —
 zéro LLM, zéro invention. Utilisé ensuite (Phase D) pour comparer une annonce et un CV.
+
+Limite connue : les libellés d'un seul caractère sont écartés (trop de faux positifs, ex. "C").
+Quelques libellés de 3 caractères qui sont aussi des mots français courants (ex. "Son", "Nez",
+"Cor") peuvent occasionnellement créer un faux positif — non filtrés pour ne pas perdre les
+acronymes techniques légitimes de la même longueur (CSS, XML, PHP, Ada, GRH, PMB).
+
+## Interface web (Phase D + E)
+
+```
+source .venv/bin/activate
+python backend/app.py
+```
+
+Ouvre ensuite **http://127.0.0.1:5001/** dans le navigateur. Une seule commande, un seul port :
+Flask sert à la fois la page (`frontend/index.html`) et l'API.
+
+- Colle le texte de l'annonce à gauche, choisis la langue (FR = ROME, EN = ESCO).
+- CV à droite : colle le texte ou importe un PDF (extraction automatique via `pypdf`, y compris
+  les PDF chiffrés avec mot de passe vide — un vrai mot de passe non vide reste hors de portée,
+  utiliser "Coller le texte" dans ce cas).
+- Bouton "Analyser" → tableau des mots-clés de l'annonce **présents** dans le CV (vert) et
+  **manquants** (rouge), à valider et reporter manuellement sur le CV Canva master.
+- Testé de bout en bout (Playwright) : chargement, saisie, bascule PDF, résultats — 0 erreur JS
+  (hors 404 favicon, sans conséquence).

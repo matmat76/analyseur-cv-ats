@@ -28,4 +28,7 @@ Le moteur d'analyse doit être **déterministe, pas dépendant d'un appel IA gé
 - **Phase F (v2, différée)** — couche embeddings Ollama.
 
 ## Dépendance bloquante à lever par Matthieu
-Créer un compte sur https://francetravail.io, s'abonner à l'API **ROME 4.0 – Compétences** + **ROME 4.0 – Métiers**, et me transmettre `client_id` / `client_secret` directement dans le chat (jamais dans un fichier `.env`, je ne les lis pas).
+Créer un compte sur https://francetravail.io, s'abonner à l'API **ROME 4.0 – Compétences** + **ROME 4.0 – Métiers**, et me transmettre `client_id` / `client_secret` directement dans le chat (jamais dans un fichier `.env`, je ne les lis pas). **Levé le 2026-07-22** : identifiants fournis via `.env.secret` racine.
+
+## État — 2026-07-22, fin de session
+Phases A à E construites et testées de bout en bout (interface incluse) : voir `README.md` pour le détail technique de chaque phase et les commandes de lancement. Reste en v2/différé : couche embeddings Ollama (Phase F), suggestion de formulation piochée dans les CV déjà écrits par Matthieu (mentionnée section "Sortie" plus haut, pas encore implémentée — actuellement seule la liste présents/manquants est produite, sans proposition de texte de remplacement).

@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Analyseur CV / ATS</title>
+<style>
+  :root { color-scheme: light dark; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    max-width: 1100px;
+    margin: 2rem auto;
+    padding: 0 1.5rem 4rem;
+    line-height: 1.5;
+    color: #1a1a1a;
+    background: #fff;
+  }
+  @media (prefers-color-scheme: dark) {
+    body { color: #e8e8e8; background: #12141a; }
+    textarea, select, .panel { background: #1b1e26; color: #e8e8e8; border-color: #333; }
+    .tag-present { background: #16351f; color: #7fdb96; }
+    .tag-missing { background: #3a1f1f; color: #ff9d9d; }
+    .toggle button.active { background: #2a2f3a; }
+    button.primary { background: #4a7dff; }
+  }
+  h1 { font-size: 1.5rem; margin-bottom: 0.25rem; }
+  p.subtitle { color: #666; margin-top: 0; }
+  .top-controls { display: flex; gap: 1rem; align-items: center; margin: 1.5rem 0; }
+  .columns { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  @media (max-width: 720px) { .columns { grid-template-columns: 1fr; } }
+  .panel { border: 1px solid #ddd; border-radius: 10px; padding: 1rem; }
+  .panel h2 { font-size: 1rem; margin-top: 0; }
+  textarea {
+    width: 100%; min-height: 260px; font-family: inherit; font-size: 0.9rem;
+    border: 1px solid #ccc; border-radius: 8px; padding: 0.6rem; resize: vertical;
+  }
+  .toggle { display: flex; gap: 0.4rem; margin-bottom: 0.6rem; }
+  .toggle button {
+    border: 1px solid #ccc; background: #f5f5f5; padding: 0.35rem 0.75rem;
+    border-radius: 999px; cursor: pointer; font-size: 0.85rem;
+  }
+  .toggle button.active { background: #e0e8ff; font-weight: 600; }
+  button.primary {
+    display: block; margin: 1.5rem auto; padding: 0.7rem 2rem; font-size: 1rem;
+    background: #2451e0; color: #fff; border: none; border-radius: 8px; cursor: pointer;
+  }
+  button.primary:disabled { opacity: 0.5; cursor: wait; }
+  .results { margin-top: 2rem; }
+  .results-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  @media (max-width: 720px) { .results-columns { grid-template-columns: 1fr; } }
+  .tag-list { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 0.4rem; }
+  .tag-present, .tag-missing {
+    display: inline-block; padding: 0.3rem 0.6rem; border-radius: 999px; font-size: 0.85rem;
+  }
+  .tag-present { background: #e5f6e8; color: #1e7a34; }
+  .tag-missing { background: #fde8e8; color: #b23c3c; }
+  .tag-type { opacity: 0.7; font-size: 0.75rem; }
+  .error { color: #b23c3c; margin-top: 1rem; }
+  .count { font-weight: 600; }
+</style>
+</head>
+<body>
+  <h1>Analyseur CV / ATS</h1>
+  <p class="subtitle">Compare une offre d'emploi et un CV, repère les mots-clés attendus par les ATS.</p>
+
+  <div class="top-controls">
+    <label><input type="radio" name="lang" value="fr" checked> Français (ROME)</label>
+    <label><input type="radio" name="lang" value="en"> Anglais (ESCO)</label>
+  </div>
+
+  <div class="columns">
+    <div class="panel">
+      <h2>Offre d'emploi</h2>
+      <textarea id="offre_text" placeholder="Colle ici le texte de l'annonce..."></textarea>
+    </div>
+    <div class="panel">
+      <h2>CV</h2>
+      <div class="toggle">
+        <button type="button" id="btn-cv-text" class="active">Coller le texte</button>
+        <button type="button" id="btn-cv-pdf">Importer un PDF</button>
+      </div>
+      <textarea id="cv_text" placeholder="Colle ici le texte de ton CV..."></textarea>
+      <input type="file" id="cv_file" accept="application/pdf" style="display:none; width:100%; margin-top:0.5rem;">
+    </div>
+  </div>
+
+  <button class="primary" id="btn-analyser">Analyser</button>
+  <p id="error" class="error" style="display:none;"></p>
+
+  <div class="results" id="results" style="display:none;">
+    <div class="results-columns">
+      <div>
+        <h2>✅ Présents dans le CV (<span class="count" id="count-presents"></span>)</h2>
+        <ul class="tag-list" id="list-presents"></ul>
+      </div>
+      <div>
+        <h2>❌ Manquants (<span class="count" id="count-manquants"></span>)</h2>
+        <ul class="tag-list" id="list-manquants"></ul>
+      </div>
+    </div>
+  </div>
+
+<script>
+const btnCvText = document.getElementById('btn-cv-text');
+const btnCvPdf = document.getElementById('btn-cv-pdf');
+const cvTextArea = document.getElementById('cv_text');
+const cvFileInput = document.getElementById('cv_file');
+
+btnCvText.addEventListener('click', () => {
+  btnCvText.classList.add('active');
+  btnCvPdf.classList.remove('active');
+  cvTextArea.style.display = 'block';
+  cvFileInput.style.display = 'none';
+});
+btnCvPdf.addEventListener('click', () => {
+  btnCvPdf.classList.add('active');
+  btnCvText.classList.remove('active');
+  cvTextArea.style.display = 'none';
+  cvFileInput.style.display = 'block';
+});
+
+function renderTag(m) {
+  const li = document.createElement('li');
+  li.className = m._className;
+  li.innerHTML = `${m.label} <span class="tag-type">(${m.type})</span>`;
+  return li;
+}
+
+document.getElementById('btn-analyser').addEventListener('click', async () => {
+  const errorEl = document.getElementById('error');
+  const resultsEl = document.getElementById('results');
+  const btn = document.getElementById('btn-analyser');
+  errorEl.style.display = 'none';
+  resultsEl.style.display = 'none';
+
+  const lang = document.querySelector('input[name="lang"]:checked').value;
+  const offreText = document.getElementById('offre_text').value.trim();
+  const usingPdf = btnCvPdf.classList.contains('active');
+
+  if (!offreText) {
+    errorEl.textContent = "Le texte de l'annonce est vide.";
+    errorEl.style.display = 'block';
+    return;
+  }
+  if (usingPdf && !cvFileInput.files.length) {
+    errorEl.textContent = "Choisis un fichier PDF pour le CV.";
+    errorEl.style.display = 'block';
+    return;
+  }
+  if (!usingPdf && !cvTextArea.value.trim()) {
+    errorEl.textContent = "Le texte du CV est vide.";
+    errorEl.style.display = 'block';
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append('lang', lang);
+  formData.append('offre_text', offreText);
+  if (usingPdf) {
+    formData.append('cv_file', cvFileInput.files[0]);
+  } else {
+    formData.append('cv_text', cvTextArea.value.trim());
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Analyse en cours...';
+  try {
+    const resp = await fetch('/analyser', { method: 'POST', body: formData });
+    const data = await resp.json();
+    if (!resp.ok) {
+      throw new Error(data.erreur || 'Erreur inconnue');
+    }
+
+    const listPresents = document.getElementById('list-presents');
+    const listManquants = document.getElementById('list-manquants');
+    listPresents.innerHTML = '';
+    listManquants.innerHTML = '';
+
+    data.presents.forEach(m => { m._className = 'tag-present'; listPresents.appendChild(renderTag(m)); });
+    data.manquants.forEach(m => { m._className = 'tag-missing'; listManquants.appendChild(renderTag(m)); });
+
+    document.getElementById('count-presents').textContent = data.presents.length;
+    document.getElementById('count-manquants').textContent = data.manquants.length;
+    resultsEl.style.display = 'block';
+  } catch (e) {
+    errorEl.textContent = e.message;
+    errorEl.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Analyser';
+  }
+});
+</script>
+</body>
+</html>

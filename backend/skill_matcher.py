@@ -26,7 +26,8 @@ def _build_automaton(entries):
         surface_forms = [entry["label"]] + entry.get("aliases", [])
         for surface in surface_forms:
             norm = normalize(surface)
-            if not norm:
+            if len(norm) < 2:
+                # Écarte les libellés d'un seul caractère (ex: "C" seul) : trop de faux positifs.
                 continue
             payload = (norm, entry["label"], entry["type"], entry.get("code"))
             existing = automaton.get(norm, None)

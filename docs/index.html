@@ -36,22 +36,22 @@
 </head>
 <body>
   <h1>Analyseur CV / ATS</h1>
-  <span class="badge">En construction</span>
+  <span class="badge">Outil local — usage personnel</span>
   <p>
     Outil personnel pour comparer une offre d'emploi et un CV, repérer les mots-clés
-    attendus par les systèmes de suivi de candidature (ATS) et proposer des corrections
-    à valider manuellement.
+    attendus par les systèmes de suivi de candidature (ATS).
   </p>
   <p><strong>Où en est le projet :</strong></p>
   <ul>
     <li>✅ Base de mots-clés ESCO (anglais, tous secteurs) ingérée — 16 903 entrées</li>
     <li>✅ Base de mots-clés ROME (France Travail, français) ingérée — 37 506 entrées</li>
     <li>✅ Moteur d'extraction de mots-clés (recherche exacte, FR + EN)</li>
-    <li>⏳ Comparaison annonce / CV + interface</li>
+    <li>✅ Interface web (comparaison annonce/CV, import PDF) — testée de bout en bout</li>
   </ul>
   <p>
-    Cette page sert de point d'entrée public le temps de la connexion à l'API
-    France Travail. L'outil fonctionnel n'est pas encore en ligne ici.
+    Cette page reste un point d'entrée public (référence pour francetravail.io).
+    L'outil lui-même tourne en local sur Mac (<code>python backend/app.py</code>) —
+    voir le <code>README.md</code> du dépôt pour le lancer.
   </p>
 </body>
 </html>
