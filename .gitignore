@@ -1,4 +1,7 @@
 .venv/
 data/esco_raw/
+data/*.json
 __pycache__/
 .aider*
+.env
+.env.*

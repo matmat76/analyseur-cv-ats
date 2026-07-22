@@ -35,3 +35,27 @@ Le français est couvert séparément par l'API ROME (Phase B), pas par ESCO.
 ```
 
 Un objet par ligne source (`skills.csv` ou `occupations.csv`), pas de déduplication à ce stade.
+
+## Ingestion ROME (Phase B)
+
+Nécessite un fichier `/Users/matthieu/Library/CloudStorage/Dropbox/DigitalGarden/.env.secret`
+contenant `ROME_CLIENT_ID` et `ROME_CLIENT_SECRET` (identifiants de l'application créée sur
+francetravail.io, API "ROME 4.0 - Compétences" + "ROME 4.0 - Métiers"). Ce fichier n'est jamais lu
+par l'agent — seul le script Python le charge à l'exécution.
+
+```
+source .venv/bin/activate
+python backend/rome_ingest.py
+```
+
+Génère `data/rome_index.json` : 35 595 compétences + 1 911 métiers (`{label, lang: "fr", type,
+code, aliases: []}`). Un seul appel par ressource, pas de pagination côté API.
+
+Détails techniques trouvés par tâtonnement (à ne pas re-chercher) :
+- Jeton : `POST https://entreprise.pole-emploi.fr/connexion/oauth2/access_token?realm=/partenaire`
+  (grant_type=client_credentials)
+- Scope compétences : `api_rome-competencesv1 nomenclatureRome`
+- Scope métiers : `api_rome-metiersv1 nomenclatureRome`
+- Liste compétences : `GET https://api.francetravail.io/partenaire/rome-competences/v1/competences/competence`
+- Liste métiers : `GET https://api.francetravail.io/partenaire/rome-metiers/v1/metiers/metier`
+- Limite de débit constatée sur le tableau de bord : 1 appel/seconde (géré par `rome_client.py`).
