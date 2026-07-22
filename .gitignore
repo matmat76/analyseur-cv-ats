@@ -1,0 +1,4 @@
+.venv/
+data/esco_raw/
+__pycache__/
+.aider*
