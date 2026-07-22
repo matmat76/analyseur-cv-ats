@@ -2,4 +2,4 @@ pyahocorasick
 requests
 flask
 python-dotenv
-pypdf
+pymupdf

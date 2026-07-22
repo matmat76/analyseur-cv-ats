@@ -1,8 +1,7 @@
-import io
 import os
 
+import fitz
 from flask import Flask, jsonify, request, send_from_directory
-from pypdf import PdfReader
 
 from skill_matcher import extract_matches
 
@@ -12,11 +11,10 @@ app = Flask(__name__, static_folder=None)
 
 
 def extract_pdf_text(file_storage):
-    reader = PdfReader(io.BytesIO(file_storage.read()))
-    if reader.is_encrypted:
-        reader.decrypt("")
-    pages = [page.extract_text() or "" for page in reader.pages]
-    return "\n".join(pages)
+    doc = fitz.open(stream=file_storage.read(), filetype="pdf")
+    if doc.is_encrypted:
+        doc.authenticate("")
+    return "\n".join(page.get_text() for page in doc)
 
 
 @app.get("/")
