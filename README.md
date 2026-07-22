@@ -59,3 +59,16 @@ Détails techniques trouvés par tâtonnement (à ne pas re-chercher) :
 - Liste compétences : `GET https://api.francetravail.io/partenaire/rome-competences/v1/competences/competence`
 - Liste métiers : `GET https://api.francetravail.io/partenaire/rome-metiers/v1/metiers/metier`
 - Limite de débit constatée sur le tableau de bord : 1 appel/seconde (géré par `rome_client.py`).
+
+## Moteur d'extraction de mots-clés (Phase C)
+
+```
+source .venv/bin/activate
+python backend/skill_matcher.py
+```
+
+`backend/skill_matcher.py` charge `data/esco_index.json` (anglais) ou `data/rome_index.json`
+(français) selon la langue demandée, construit un automate Aho-Corasick (`pyahocorasick`) sur tous
+les libellés + alias, et expose `extract_matches(text, lang)` : recherche exacte (insensible à la
+casse, respect des frontières de mot), retourne les compétences/métiers trouvés dans le texte —
+zéro LLM, zéro invention. Utilisé ensuite (Phase D) pour comparer une annonce et un CV.
