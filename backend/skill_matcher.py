@@ -22,19 +22,23 @@ def _is_word_char(ch):
 
 def _build_automaton(entries):
     automaton = ahocorasick.Automaton()
+
+    def add(norm, payload):
+        if len(norm) < 2:
+            # Écarte les libellés d'un seul caractère (ex: "C" seul) : trop de faux positifs.
+            return
+        existing = automaton.get(norm, None)
+        if existing is None:
+            automaton.add_word(norm, [payload])
+        elif payload not in existing:
+            existing.append(payload)
+
     for entry in entries:
         surface_forms = [entry["label"]] + entry.get("aliases", [])
         for surface in surface_forms:
             norm = normalize(surface)
-            if len(norm) < 2:
-                # Écarte les libellés d'un seul caractère (ex: "C" seul) : trop de faux positifs.
-                continue
-            payload = (norm, entry["label"], entry["type"], entry.get("code"))
-            existing = automaton.get(norm, None)
-            if existing is None:
-                automaton.add_word(norm, [payload])
-            elif payload not in existing:
-                existing.append(payload)
+            add(norm, (norm, entry["label"], entry["type"], entry.get("code")))
+
     automaton.make_automaton()
     return automaton
 
