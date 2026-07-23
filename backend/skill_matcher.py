@@ -6,6 +6,7 @@ import ahocorasick
 
 ESCO_FILE = "data/esco_index.json"
 ROME_FILE = "data/rome_index.json"
+MOTS_CLES_FILE = "data/mots_cles_techniques.json"
 
 
 def normalize(text):
@@ -51,10 +52,24 @@ def _load_entries(path):
 _automatons = {}
 
 
+def _load_mots_cles():
+    """Liste curée manuellement : termes techniques courants (langages, outils,
+    domaines) trop isolés/génériques pour apparaître comme libellé autonome dans
+    ROME/ESCO (ex: 'Python' n'existe que noyé dans 'Programmation Python pour
+    l'analyse spatiale'). Pas de code officiel — type 'mot-clé technique'."""
+    with open(MOTS_CLES_FILE, encoding="utf-8") as f:
+        raw = json.load(f)
+    return [
+        {"label": item["terme"], "type": "mot-clé technique", "aliases": item.get("aliases", [])}
+        for item in raw
+    ]
+
+
 def _get_automaton(lang):
     if lang not in _automatons:
         path = ROME_FILE if lang == "fr" else ESCO_FILE
-        _automatons[lang] = _build_automaton(_load_entries(path))
+        entries = _load_entries(path) + _load_mots_cles()
+        _automatons[lang] = _build_automaton(entries)
     return _automatons[lang]
 
 

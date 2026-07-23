@@ -89,10 +89,36 @@ Ouvre ensuite **http://127.0.0.1:5001/** dans le navigateur. Une seule commande,
 Flask sert à la fois la page (`frontend/index.html`) et l'API.
 
 - Colle le texte de l'annonce à gauche, choisis la langue (FR = ROME, EN = ESCO).
-- CV à droite : colle le texte ou importe un PDF (extraction automatique via `pypdf`, y compris
+- CV à droite : colle le texte ou importe un PDF (extraction automatique via `pymupdf`, y compris
   les PDF chiffrés avec mot de passe vide — un vrai mot de passe non vide reste hors de portée,
-  utiliser "Coller le texte" dans ce cas).
+  utiliser "Coller le texte" dans ce cas). **Ne pas utiliser `pypdf`** : testé et abandonné, casse
+  le texte de certains PDF Canva (espace inséré entre chaque lettre).
 - Bouton "Analyser" → tableau des mots-clés de l'annonce **présents** dans le CV (vert) et
   **manquants** (rouge), à valider et reporter manuellement sur le CV Canva master.
 - Testé de bout en bout (Playwright) : chargement, saisie, bascule PDF, résultats — 0 erreur JS
   (hors 404 favicon, sans conséquence).
+
+## Liste curée de termes techniques (correctif recall)
+
+`data/mots_cles_techniques.json` : liste courte, tenue à la main, de termes techniques isolés
+(langages, outils, domaines — Python, MATLAB, FPGA, instrumentation, thermique, radiation...) qui
+n'existent dans ROME/ESCO que noyés dans des libellés-phrases longs (ex: "Python" n'apparaît que
+dans "Programmation Python pour l'analyse spatiale", jamais seul) — donc invisibles pour la
+recherche exacte alors qu'une vraie offre les mentionne nus. Chargée par `skill_matcher.py` en plus
+de ROME/ESCO, marquée `type: "mot-clé technique"` (pas de code officiel) pour rester honnête sur la
+source. À enrichir au fil des tests réels plutôt que viser l'exhaustivité d'un coup.
+
+## Piste abandonnée : couche sémantique Ollama (2026-07-23)
+
+`backend/embeddings.py` existe mais **n'est pas branché** dans `app.py` — expérience testée et
+non concluante, gardée en l'état pour référence (ne pas la refaire à l'identique) :
+- `nomic-embed-text` (768 dim, via Ollama local, 0 coût) batch bien (~7 ms/entrée, cache 37 506
+  libellés ROME en ~6 min) mais **ne discrimine pas fiablement** le jargon administratif court de
+  ROME. Sur des cas réels ("Python", "instrumentation", "électronique numérique"), le score du bon
+  libellé et celui d'un libellé complètement hors sujet sont quasi identiques (écart < 0.01) —
+  aucun seuil ne sépare proprement signal et bruit.
+- Les préfixes d'instruction `search_query:`/`search_document:` (requis par ce modèle) améliorent
+  la séparation sur du texte "normal" mais ne résolvent pas le problème sur ce vocabulaire précis.
+- Reste une piste possible avec un autre modèle d'embeddings (ex. multilingue plus gros type
+  bge-m3), non testée faute de temps — sinon la liste curée manuelle ci-dessus est le correctif
+  retenu à la place.
